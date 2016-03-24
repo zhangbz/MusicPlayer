@@ -63,9 +63,9 @@
         <ImageButton
             android:id="@+id/btn_play"
             android:layout_marginLeft="10dp"
-            android:src="@drawable/note_btn_play"
-            android:layout_width="30dp"
-            android:layout_height="30dp"/>
+            android:background="@drawable/desk_play"
+            android:layout_width="40dp"
+            android:layout_height="40dp"/>
         <ImageButton
             android:id="@+id/btn_next"
             android:layout_marginLeft="10dp"
