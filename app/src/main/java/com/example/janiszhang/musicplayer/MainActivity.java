@@ -4,6 +4,9 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -27,14 +30,17 @@ public class MainActivity extends AppCompatActivity {
     private MyAdapter mMyAdapter;
     private int mMusicIndex;
     private boolean isPlaying = false;
+    private int mIndex = 0;
+    private Messenger mMessenger;
 
     private MusicService.MyBinder mMyBinder;
     private ServiceConnection mServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             Log.i("zhangbz", "onServiceConnected");
-            mMyBinder = (MusicService.MyBinder) service;
-            setMusicNameAndSingerName();
+//            mMyBinder = (MusicService.MyBinder) service;
+//            setMusicNameAndSingerName();
+            mMessenger = new Messenger(service);
         }
 
         @Override
@@ -61,48 +67,111 @@ public class MainActivity extends AppCompatActivity {
         mMyAdapter = new MyAdapter(MainActivity.this, 0, mMusicDatas);
         mMusicListlv.setAdapter(mMyAdapter);
 
-
         mMusicName = (TextView) findViewById(R.id.music_name);
         mSingerName = (TextView) findViewById(R.id.singer_name);
         mNextBtn = (ImageButton) findViewById(R.id.btn_next);
         mPlayBtn = (ImageButton) findViewById(R.id.btn_play);
         mPrevBtn = (ImageButton) findViewById(R.id.btn_prev);
 
+        setMusicNameAndSingerName(mIndex);
+
+        if(mMessenger != null) {
+            Message message = Message.obtain(null, 0);
+            try {
+                mMessenger.send(message);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
         mPlayBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mMyBinder.play();
+//                mMyBinder.play();
+//                if(isPlaying) {
+//                    mPlayBtn.setBackgroundResource(R.drawable.desk_play);
+//                    isPlaying = false;
+//                } else {
+//                    mPlayBtn.setBackgroundResource(R.drawable.desk_pause);
+//                    isPlaying = true;
+//                }
+//                setMusicNameAndSingerName();
                 if(isPlaying) {
+                    if(mMessenger != null) {
+                        Message message = Message.obtain(null, 1);//?????第三个参数的问题
+                        message.arg1 = 1;
+                        message.arg2 = mIndex;
+                        try {
+                            mMessenger.send(message);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        }
+                    }
                     mPlayBtn.setBackgroundResource(R.drawable.desk_play);
                     isPlaying = false;
                 } else {
+                    if(mMessenger != null) {
+                        Message message = Message.obtain(null, 1);
+                        message.arg1 = 0;
+                        message.arg2 = mIndex;
+                        try {
+                            mMessenger.send(message);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        }
+                    }
                     mPlayBtn.setBackgroundResource(R.drawable.desk_pause);
                     isPlaying = true;
                 }
-                setMusicNameAndSingerName();
             }
         });
         mPrevBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mMyBinder.prev();
-                setMusicNameAndSingerName();
+//                mMyBinder.prev();
+//                setMusicNameAndSingerName();
+                mIndex = (mIndex-1)<0?mMusicDatas.size()-1:mIndex-1;
+                setMusicNameAndSingerName(mIndex);
+                if(mMessenger != null) {
+                    Message message = Message.obtain(null, 0);
+                    message.arg1 =mIndex;
+                    try {
+                        mMessenger.send(message);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         });
         mNextBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mMyBinder.next();
-                setMusicNameAndSingerName();
+//                mMyBinder.next();
+//                setMusicNameAndSingerName();
+                mIndex = (mIndex+1)>=mMusicDatas.size()? 0 : mIndex+1;
+                setMusicNameAndSingerName(mIndex);
+                if(mMessenger != null) {
+                    Message message = Message.obtain(null, 0);
+                    message.arg1 = mIndex;
+                    try {
+                        mMessenger.send(message);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         });
 
     }
 
-    private void setMusicNameAndSingerName() {
-        mMusicIndex = mMyBinder.getMusicIndex();
-        mMusicName.setText(mMusicDatas.get(mMusicIndex).getName());
-        mSingerName.setText(mMusicDatas.get(mMusicIndex).getSinger());
+//    private void setMusicNameAndSingerName() {
+//        mMusicIndex = mMyBinder.getMusicIndex();
+//        mMusicName.setText(mMusicDatas.get(mMusicIndex).getName());
+//        mSingerName.setText(mMusicDatas.get(mMusicIndex).getSinger());
+//    }
+
+    private void setMusicNameAndSingerName(int index) {
+        mMusicName.setText(mMusicDatas.get(index).getName());
+        mSingerName.setText(mMusicDatas.get(index).getSinger());
     }
 
     @Override

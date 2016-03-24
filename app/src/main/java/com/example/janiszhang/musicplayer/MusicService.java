@@ -26,25 +26,40 @@ public class MusicService extends Service{
 
     private boolean isPlaying = false;
 
-//    Messenger mMessenger = new Messenger(new IncomingHandler());
-//
-//    class IncomingHandler extends Handler {
-//        @Override
-//        public void handleMessage(Message msg) {
-//            super.handleMessage(msg);
-//            switch (msg.what) {
-//                case 0:
-//                    //
-//                    break;
-//            }
-//        }
-//    }
+    Messenger mMessenger = new Messenger(new IncomingHandler());
+
+    class IncomingHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what) {
+                case 0:
+                    mMediaPlayer.stop();
+                    i  = msg.arg1;
+                    mMediaPlayer = MediaPlayer.create(MusicService.this, mMusicDatas.get(i).getSrc());
+                    if(isPlaying) {
+                        mMediaPlayer.start();
+                    }
+                    break;
+                case 1:
+                    if(msg.arg1==1){
+                        isPlaying =false;
+                        mMediaPlayer.pause();
+                    } else {
+                        isPlaying = true;
+                        i = msg.arg2;
+                        mMediaPlayer = MediaPlayer.create(MusicService.this, mMusicDatas.get(i).getSrc());
+                        mMediaPlayer.start();
+                    }
+            }
+        }
+    }
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         Log.i("zhangbz", "service onBind");
-        return mMyBinder;
-//        return mMessenger.getBinder();
+//        return mMyBinder;
+        return mMessenger.getBinder();
     }
 
     @Override
