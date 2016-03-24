@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="horizontal"
+              android:layout_marginTop="10dp"
+              android:layout_marginBottom="10dp"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+    <!-- android:gravity="center"  文字在TextView中居中(本控件内的内容相对于本控件)
+android:layout_gravity="center"  TextView在LinearLayout中居中(本控件相对于父控件)-->
+
+    <ImageView
+        android:src="@drawable/default_pic"
+        android:layout_margin="10dp"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_gravity="center"
+        android:gravity="center"/>
+    <TextView
+        android:layout_marginLeft="10dp"
+        android:id="@+id/music_name"
+        android:text="要怎么办"
+        android:textSize="20dp"
+        android:textColor="#000000"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:layout_marginLeft="10dp"
+        android:id="@+id/singer_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="李柏凝"
+        android:textColor="@android:color/darker_gray"
+        android:textSize="16dp"
+        android:layout_gravity="center"
+        android:gravity="center"/>
+
+</LinearLayout>
