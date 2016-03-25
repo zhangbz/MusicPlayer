@@ -3,6 +3,7 @@ package com.example.janiszhang.musicplayer;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
@@ -33,7 +34,27 @@ public class MainActivity extends AppCompatActivity {
     private int mIndex = 0;
     private Messenger mMessenger;
 
+    public static final int CODE = 1;
     private MusicService.MyBinder mMyBinder;
+    private  Messenger mActivityMessenger = new Messenger(new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what) {
+                case CODE:
+                    mIndex = msg.arg1;
+                    setMusicNameAndSingerName(mIndex);
+                    if(msg.arg2 == 1) {
+                        mPlayBtn.setBackgroundResource(R.drawable.desk_pause);
+                    } else {
+                        mPlayBtn.setBackgroundResource(R.drawable.desk_play);
+                    }
+            }
+        }
+    });
+
+
+
     private ServiceConnection mServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -41,6 +62,15 @@ public class MainActivity extends AppCompatActivity {
 //            mMyBinder = (MusicService.MyBinder) service;
 //            setMusicNameAndSingerName();
             mMessenger = new Messenger(service);
+
+            //注意这里紧接着要send一次
+            Message message = Message.obtain();
+            message.replyTo = mActivityMessenger;
+            try {
+                mMessenger.send(message);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
 
         @Override
@@ -100,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
                         Message message = Message.obtain(null, 1);//?????第三个参数的问题
                         message.arg1 = 1;
                         message.arg2 = mIndex;
+                        message.replyTo = mActivityMessenger;
                         try {
                             mMessenger.send(message);
                         } catch (RemoteException e) {
@@ -113,6 +144,7 @@ public class MainActivity extends AppCompatActivity {
                         Message message = Message.obtain(null, 1);
                         message.arg1 = 0;
                         message.arg2 = mIndex;
+                        message.replyTo = mActivityMessenger;
                         try {
                             mMessenger.send(message);
                         } catch (RemoteException e) {
@@ -134,6 +166,7 @@ public class MainActivity extends AppCompatActivity {
                 if(mMessenger != null) {
                     Message message = Message.obtain(null, 0);
                     message.arg1 =mIndex;
+                    message.replyTo = mActivityMessenger;
                     try {
                         mMessenger.send(message);
                     } catch (RemoteException e) {
@@ -152,6 +185,7 @@ public class MainActivity extends AppCompatActivity {
                 if(mMessenger != null) {
                     Message message = Message.obtain(null, 0);
                     message.arg1 = mIndex;
+                    message.replyTo = mActivityMessenger;
                     try {
                         mMessenger.send(message);
                     } catch (RemoteException e) {

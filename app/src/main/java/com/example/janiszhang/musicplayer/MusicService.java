@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
+import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.text.TextUtils;
@@ -39,6 +40,7 @@ public class MusicService extends Service{
     private boolean isPlaying = false;
 
     Messenger mMessenger = new Messenger(new IncomingHandler());
+    Messenger mActivityMessenger;
     private RemoteViews mRemoteViews;
     private NotificationCompat.Builder mBuilder;
     private NotificationManager mNotificationManager;
@@ -47,6 +49,7 @@ public class MusicService extends Service{
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
+            mActivityMessenger = msg.replyTo;
             switch (msg.what) {
                 case 0:
                     mMediaPlayer.stop();
@@ -55,17 +58,28 @@ public class MusicService extends Service{
                     if(isPlaying) {
                         mMediaPlayer.start();
                     }
+                    mRemoteViews.setTextViewText(R.id.music_name, mMusicDatas.get(i).getName());
+                    mRemoteViews.setTextViewText(R.id.singer_name, mMusicDatas.get(i).getSinger());
+                    mNotificationManager.notify(233, mBuilder.build());
                     break;
                 case 1:
                     if(msg.arg1==1){
                         isPlaying =false;
                         mMediaPlayer.pause();
+                        mRemoteViews.setImageViewResource(R.id.btn_play, R.drawable.note_btn_play);
+                        mNotificationManager.notify(233, mBuilder.build());
                     } else {
                         isPlaying = true;
                         i = msg.arg2;
                         mMediaPlayer = MediaPlayer.create(MusicService.this, mMusicDatas.get(i).getSrc());
                         mMediaPlayer.start();
+                        mRemoteViews.setImageViewResource(R.id.btn_play, R.drawable.note_btn_pause);
+                        mNotificationManager.notify(233, mBuilder.build());
                     }
+                    break;
+                default:
+                    Log.i("zhangbz", "default");
+                    break;
             }
         }
     }
@@ -84,6 +98,7 @@ public class MusicService extends Service{
         mMusicList = MusicList.getMusicList();
         mMusicDatas = mMusicList.getList();
         mMediaPlayer = MediaPlayer.create(this, mMusicDatas.get(i).getSrc());
+        mMediaPlayer.setLooping(true);
         mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
@@ -101,17 +116,19 @@ public class MusicService extends Service{
         Intent intent = new Intent(this, MusicService.class);
         intent.setAction(ACTION_NOTIFICATION);
 
-        intent.putExtra(BUTTON_INDEX, BUTTON_PREV);
-        PendingIntent pendingIntentPrev = PendingIntent.getService(this, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        mRemoteViews.setOnClickPendingIntent(R.id.btn_prev, pendingIntentPrev);
+
 
         intent.putExtra(BUTTON_INDEX, BUTTON_PLAY);
-        pendingIntentPrev = PendingIntent.getService(this, 2, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+        PendingIntent  pendingIntentPrev = PendingIntent.getService(this, 2, intent, PendingIntent.FLAG_CANCEL_CURRENT);
         mRemoteViews.setOnClickPendingIntent(R.id.btn_play, pendingIntentPrev);
 
         intent.putExtra(BUTTON_INDEX, BUTTON_NEXT);
         pendingIntentPrev = PendingIntent.getService(this, 3, intent, PendingIntent.FLAG_CANCEL_CURRENT);
         mRemoteViews.setOnClickPendingIntent(R.id.btn_next, pendingIntentPrev);
+
+        intent.putExtra(BUTTON_INDEX, BUTTON_PREV);
+        pendingIntentPrev = PendingIntent.getService(this, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        mRemoteViews.setOnClickPendingIntent(R.id.btn_prev, pendingIntentPrev);
 
         mBuilder = new NotificationCompat.Builder(this);
         mBuilder.setSmallIcon(R.drawable.default_pic);
@@ -128,8 +145,8 @@ public class MusicService extends Service{
         String action = intent.getAction();
         String stringExtra = intent.getStringExtra(BUTTON_INDEX);
         if(TextUtils.equals(action, ACTION_NOTIFICATION)) {
-            if (TextUtils.equals(stringExtra, BUTTON_PREV)) {
-                i = (i-1)<0?mMusicDatas.size()-1:i-1;
+            if (TextUtils.equals(stringExtra, BUTTON_NEXT)) {
+                i = (i+1)>=mMusicDatas.size()? 0 : i+1;
                 mMediaPlayer.stop();
                 mMediaPlayer = MediaPlayer.create(MusicService.this, mMusicDatas.get(i).getSrc());
                 if(isPlaying) {
@@ -146,13 +163,16 @@ public class MusicService extends Service{
                     mNotificationManager.notify(233, mBuilder.build());
                 } else {
                     isPlaying = true;
+                    mMediaPlayer = MediaPlayer.create(MusicService.this, mMusicDatas.get(i).getSrc());
                     mMediaPlayer.start();
                     mRemoteViews.setImageViewResource(R.id.btn_play,R.drawable.note_btn_pause);
                     mNotificationManager.notify(233, mBuilder.build());
                 }
 
             } else {
-                i = (i+1)>=mMusicDatas.size()? 0 : i+1;
+
+
+                i = (i-1)<0?mMusicDatas.size()-1:i-1;
                 mMediaPlayer.stop();
                 mMediaPlayer = MediaPlayer.create(MusicService.this, mMusicDatas.get(i).getSrc());
                 if(isPlaying) {
@@ -162,10 +182,23 @@ public class MusicService extends Service{
                 mRemoteViews.setTextViewText(R.id.singer_name, mMusicDatas.get(i).getSinger());
                 mNotificationManager.notify(233, mBuilder.build());
             }
+
+            sendToActivity();
         }
         return super.onStartCommand(intent, flags, startId);
     }
 
+    private void sendToActivity() {
+        Message message = Message.obtain();
+        message.what = MainActivity.CODE;
+        message.arg1 = i;
+        message.arg2 = (isPlaying == true)?1:2;
+        try {
+            mActivityMessenger.send(message);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
     @Override
     public void onDestroy() {
         super.onDestroy();
